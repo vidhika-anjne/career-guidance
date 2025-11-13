@@ -1,13 +1,8 @@
-import { getAuth } from "firebase/auth";
 import React from "react";
 import { Link } from "react-router-dom";
 import PathConstants from "../../routes/PathConstants";
 
 const AdminDashboard = () => {
-  const onLogOut = () => {
-    const auth = getAuth();
-    auth.signOut();
-  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -15,12 +10,6 @@ const AdminDashboard = () => {
       <header className="shadow-md bg-gradient-to-r from-blue-600 to-blue-800">
         <div className="container flex items-center justify-between px-4 py-6 mx-auto">
           <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-          <button
-            onClick={onLogOut}
-            className="px-4 py-2 text-white transition bg-blue-500 rounded btn hover:bg-blue-600"
-          >
-            Logout
-          </button>
         </div>
       </header>
 

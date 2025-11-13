@@ -1,220 +1,189 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PathConstants from "../routes/PathConstants";
-import { Link } from "react-router-dom";
-import {} from "../firebase.config";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { toast } from "react-toastify";
-import OAuth from "../components/OAuth";
-import { motion } from "motion/react";
-import { db } from "../firebase.config";
-import { doc, getDoc } from "firebase/firestore";
 
-function Login() {
+const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
-    passsword: "",
+    password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-  const onChange = (e) => {
+  const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value,
+      [e.target.name]: e.target.value,
     });
   };
 
-  const navigate = useNavigate();
-
-  const submitData = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const auth = getAuth();
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      if (userCredential.user) {
-        const userId = userCredential.user.uid;
-        const userDocRef = doc(db, "users", userId); // Reference to the user document
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-
-          if (userData.role === "admin") {
-            navigate(PathConstants.ADMIN); // Redirect to admin page
-          } else {
-            navigate(PathConstants.USER);
-          }
-        } else {
-          toast.error("User document not found");
-        }
+      const email = String(formData.email || "").trim();
+      if (!/@gmail\.com$/i.test(email)) {
+        throw new Error("Please use a @gmail.com email");
       }
-    } catch (error) {
-      console.error("Error logging in:", error);
-      toast.error("Wrong User Credentials");
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password: formData.password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Login failed");
+      toast.success("Login successful! Welcome to CareerVerse");
+      navigate(PathConstants.HOME);
+    } catch (err) {
+      toast.error(err.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const { email, password } = formData;
+  const handleGoogleResponse = async (response) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ credential: response?.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Google sign-in failed");
+      toast.success("Login successful! Welcome to CareerVerse");
+      navigate(PathConstants.HOME);
+    } catch (err) {
+      toast.error(err.message || "Google sign-in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      if (!window.google) {
+        toast.error("Google sign-in not configured");
+        return;
+      }
+      const res = await fetch(`${API_BASE}/api/config/public`);
+      const cfg = await res.json();
+      const clientId = cfg?.googleClientId;
+      if (!clientId) {
+        toast.error("Google sign-in not configured");
+        return;
+      }
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleResponse,
+      });
+      window.google.accounts.id.prompt();
+    } catch (_) {
+      toast.error("Google sign-in not configured");
+    }
+  };
 
   return (
-    <>
-      <div class="background z-[-1]">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <h1 className="absolute top-0 w-full text-4xl font-bold text-center text-white ">
-        Career Guidance
-      </h1>
-      <motion.div
-        className="absolute bg-white rounded-full size-10 top-5 left-5 "
-        whileHover={{
-          scale: 1.2,
-        }}
-        transition={{
-          duration: 0.1,
-          type: "spring",
-        }}
-      >
-        <Link
-          to={PathConstants.ABOUT}
-          className="flex items-center justify-center w-full h-full"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="back-button"
-          >
-            <path d="M19 12H5"></path>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-        </Link>
-      </motion.div>
-      <div className="w-full h-full ">
-        <div className="flex flex-col items-center justify-center min-h-screen ">
-          <div className="w-2/3 max-w-lg p-5 border-[1px] border-black glass  drop-shadow-lg">
-            {/* {" "} */}
-            {/* LEFT SIDE BEGIN ============== */}
-            <div className="my-10 text-center">
-              <h2 className="text-3xl font-extrabold text-base-content">
-                Login
-              </h2>
-            </div>
-            <div className="flex justify-center gap-5 my-2 mb-12">
-              {/* <a
-              href="/"
-              className="w-12 h-12 p-3 bg-white border-blue-600 rounded-full shadow-md hover:bg-blue-600 group"
-              >
-              <FaFacebookF className="font text-[20px] text-blue-600 group-hover:text-white" />
-              </a> */}
-              <OAuth />
-            </div>
-            <p className="my-3 text-center opacity-50">or use your account</p>
-            <form onSubmit={submitData}>
-              <div className="flex flex-col items-center gap-3">
-                <label className="flex items-center gap-2 input input-bordered">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    className="w-4 h-4 opacity-70"
-                  >
-                    <path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z" />
-                    <path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" />
-                  </svg>
-                  <input
-                    type="email"
-                    value={email}
-                    className="grow"
-                    placeholder="Email"
-                    onChange={onChange}
-                    id="email"
-                  />
-                </label>
-                <label className="flex items-center gap-2 input input-bordered">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    className="w-4 h-4 opacity-70"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M14 6a4 4 0 0 1-4.899 3.899l-1.955 1.955a.5.5 0 0 1-.353.146H5v1.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-2.293a.5.5 0 0 1 .146-.353l3.955-3.955A4 4 0 1 1 14 6Zm-4-2a.75.75 0 0 0 0 1.5.5.5 0 0 1 .5.5.75.75 0 0 0 1.5 0 2 2 0 0 0-2-2Z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <input
-                    type="password"
-                    value={password}
-                    className="grow"
-                    placeholder="password"
-                    onChange={onChange}
-                    id="password"
-                  />
-                </label>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
+          <p className="text-gray-600">Sign in to your CareerVerse account</p>
+        </div>
 
-                <div>
-                  <Link
-                    to={PathConstants.FORGOTPASSWORD}
-                    className="opacity-50 text-black hover:opacity-80 underline text-[17px] "
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
+        {/* Notice */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-blue-700 text-center">
+            Use your Gmail address and password, or continue with Google below.
+          </p>
+        </div>
 
-                <div>
-                  <button type="submit" className="w-24 mt-6 btn-accent btn">
-                    Log In
-                  </button>
-                </div>
-                <div>
-                  <p>
-                    <span className="opacity-50">To register. </span>
-                    <Link
-                      className="text-black underline opacity-50 hover:opacity-80"
-                      to={PathConstants.SIGNUP}
-                    >
-                      Sign Up
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </form>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              placeholder="Enter your email"
+              required
+            />
           </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Signing in...
+              </div>
+            ) : (
+              "Sign In"
+            )}
+          </button>
+        </form>
+
+        {/* Google Login Button */}
+        <div className="mt-4">
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors font-medium"
+          >
+            Continue with Google
+          </button>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-8 text-center space-y-2">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <button
+              onClick={() => navigate(PathConstants.SIGNUP)}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Sign up here
+            </button>
+          </p>
+          <button
+            onClick={() => navigate(PathConstants.ABOUT)}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            ← Back to Home
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
-}
+};
 
 export default Login;

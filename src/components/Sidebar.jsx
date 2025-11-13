@@ -1,4 +1,3 @@
-import { getAuth } from "firebase/auth";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PathConstants from "../routes/PathConstants";
@@ -7,16 +6,10 @@ import { motion } from "motion/react";
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const auth = getAuth();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
-  };
-
-  const onLogout = () => {
-    auth.signOut();
-    navigate(PathConstants.ABOUT);
   };
 
   return (
@@ -55,7 +48,7 @@ const Sidebar = () => {
 
         <div className="flex items-center justify-center">
           <h2 className="mb-5 text-xl select-none">
-            {auth.currentUser.displayName}
+            User Dashboard
           </h2>
         </div>
 
@@ -110,14 +103,6 @@ const Sidebar = () => {
             >
               Profile
             </Link>
-          </li>
-          <li>
-            <div
-              onClick={onLogout}
-              className="block px-3 py-2 transition duration-200 ease-in-out rounded-none hover:bg-gray-600"
-            >
-              Log Out
-            </div>
           </li>
         </ul>
       </div>

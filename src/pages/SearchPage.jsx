@@ -1,13 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PathConstants from "../routes/PathConstants";
 import StateCity from "../components/StateCity";
-import { db } from "../firebase.config";
-import { getAuth } from "firebase/auth";
-import { and, collection, getDocs, or, query, where } from "firebase/firestore";
+// Firebase imports removed - using mock data instead
 
 const SearchPage = () => {
   const [filteredColleges, setFilteredColleges] = useState([]);
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const [formData, setFormData] = useState({
     type: {
       technology: false,
@@ -19,6 +18,7 @@ const SearchPage = () => {
     name: "",
     state: "",
     city: "",
+    path: "",
   });
 
   const {
@@ -52,55 +52,46 @@ const SearchPage = () => {
       city: city.toLowerCase().trim(),
     });
   };
+  const onPathChange = (e) => {
+    setFormData({
+      ...formData,
+      path: e.target.value,
+    });
+  };
+
+  const fetchColleges = async (params = {}) => {
+    const qs = new URLSearchParams();
+    if (params.name) qs.set("name", params.name);
+    if (params.state) qs.set("state", params.state);
+    if (params.city) qs.set("city", params.city);
+    if (params.types && params.types.length) qs.set("types", params.types.join(","));
+    if (params.path) qs.set("path", params.path);
+    const url = `${API_BASE}/api/colleges${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || "Failed to load colleges");
+    setFilteredColleges(Array.isArray(data.items) ? data.items : []);
+  };
+
+  useEffect(() => {
+    // initial load: fetch all colleges
+    fetchColleges().catch(() => setFilteredColleges([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const auth = getAuth();
-      const listRef = collection(db, "colleges-list");
-
-      const conditions = [];
-
-      const queryBuilder = () => {
-        if (formData.name) {
-          conditions.push(where("name", ">=", formData.name));
-          conditions.push(where("name", "<", formData.name + "\uf8ff"));
-        }
-
-        if (formData.state) {
-          conditions.push(where("state", "==", formData.state));
-        }
-
-        if (formData.city) {
-          conditions.push(where("city", "==", formData.city));
-        }
-
-        const typeConditions = Object.entries(formData.type)
-          .filter(([key, value]) => value)
-          .map(([key]) => where("type", "==", key));
-
-        if (typeConditions.length > 0) {
-          conditions.push(or(...typeConditions));
-        }
-        console.log(conditions);
-        return query(listRef, and(...conditions));
-      };
-      const q = queryBuilder();
-
-      const results = await getDocs(q);
-
-      const colleges = [];
-
-      results.forEach((doc) => {
-        // const data = doc.data();
-        // console.log(renameKeys(doc.data()));
-        console.log(doc.data());
-        colleges.push(doc.data());
+      const selectedTypes = Object.entries(formData.type)
+        .filter(([, value]) => value)
+        .map(([key]) => key);
+      await fetchColleges({
+        name: formData.name,
+        state: formData.state,
+        city: formData.city,
+        types: selectedTypes,
+        path: formData.path,
       });
-
-      console.log(colleges);
-      setFilteredColleges(colleges);
     } catch (error) {
       console.log(error);
     }
@@ -186,6 +177,18 @@ const SearchPage = () => {
         />
 
         <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 lg:grid-cols-5 place-content-start">
+          <div className="mb-2 lg:col-span-1">
+            <label htmlFor="path" className="mr-2 select-none">Career Path</label>
+            <select id="path" value={formData.path} onChange={onPathChange} className="border rounded px-2 py-1">
+              <option value="">All</option>
+              <option value="technology">Technology</option>
+              <option value="commerce">Commerce</option>
+              <option value="arts">Arts</option>
+              <option value="design">Design</option>
+              <option value="science">Science</option>
+              <option value="medical">Medical</option>
+            </select>
+          </div>
           <div className="">
             <input
               type="checkbox"
@@ -278,8 +281,8 @@ const SearchPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredColleges.map((college, index) => (
-                  <tr key={index} className="border-b">
+                {filteredColleges.map((college) => (
+                  <tr key={college.id ?? `${college.name}-${college.city}`} className="border-b">
                     <td className="px-6 py-3 truncate">{college["name"]}</td>
                     <td className="px-6 py-3 truncate">{college.state}</td>
                     <td className="px-6 py-3">{college.city}</td>
@@ -291,7 +294,7 @@ const SearchPage = () => {
           </div>
         ) : (
           <p className="mt-4 text-center text-gray-600">
-            No results found for "<span className="font-semibold">{}</span>".
+            No results found.
           </p>
         )}
       </section>

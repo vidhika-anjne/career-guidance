@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase.config";
+// Firebase imports removed - using mock data instead
 import { Line, Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from "chart.js";
 import { streamInfo } from "../data/aptitudeQuestions";
@@ -30,40 +28,82 @@ const PersonalizedDashboard = () => {
     }
   });
 
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const [user, setUser] = useState(null);
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   useEffect(() => {
-    if (user) {
-      fetchUserProfile();
-    }
-  }, [user]);
+    try {
+      const cached = localStorage.getItem("cv_dashboard");
+      if (cached) {
+        const c = JSON.parse(cached);
+        if (c.user) setUser(c.user);
+        if (c.profileData) setProfileData(c.profileData);
+        if (c.recommendations) setRecommendations(c.recommendations);
+        setLoading(false);
+      }
+    } catch (_) {}
+    fetchUserProfile();
+  }, []);
 
   const fetchUserProfile = async () => {
     try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setUserProfile(userData);
-        if (userData.profile) {
-          setProfileData(userData.profile);
-          generateRecommendations(userData.profile);
+      let currentUser = null;
+      try {
+        const ur = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" });
+        if (ur.ok) {
+          const du = await ur.json();
+          currentUser = du.user;
+          setUser(du.user);
         }
+      } catch (_) {}
+
+      const pr = await fetch(`${API_BASE}/api/user/profile`, { credentials: "include" });
+      if (pr.ok) {
+        const data = await pr.json();
+        const p = data.profile || {};
+        const pd = {
+          age: p?.age != null ? String(p.age) : "",
+          gender: p?.gender || "",
+          class: p?.class_level || "",
+          location: p?.location || "",
+          interests: Array.isArray(p?.interests) ? p.interests : [],
+          academicPerformance: p?.academic_performance || { math: 0, science: 0, english: 0, socialStudies: 0 },
+        };
+        setUserProfile({ profile: p });
+        setProfileData(pd);
+        const rec = generateRecommendations(pd);
+        try {
+          localStorage.setItem("cv_dashboard", JSON.stringify({ user: currentUser, profileData: pd, recommendations: rec }));
+        } catch (_) {}
       }
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching user profile:", error);
+    } finally {
       setLoading(false);
     }
   };
 
   const updateProfile = async () => {
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        profile: profileData
+      const payload = {
+        age: profileData.age ? Number(profileData.age) : null,
+        gender: profileData.gender || null,
+        class_level: profileData.class || null,
+        location: profileData.location || null,
+        interests: profileData.interests || [],
+        academic_performance: profileData.academicPerformance || null,
+      };
+      await fetch(`${API_BASE}/api/user/profile`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      setUserProfile({ ...userProfile, profile: profileData });
-      generateRecommendations(profileData);
+      setUserProfile({ ...userProfile, profile: payload });
+      const rec = generateRecommendations(profileData);
+      try {
+        localStorage.setItem("cv_dashboard", JSON.stringify({ user, profileData, recommendations: rec }));
+      } catch (_) {}
       setEditMode(false);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -119,13 +159,15 @@ const PersonalizedDashboard = () => {
       .sort(([,a], [,b]) => b - a)
       .slice(0, 3);
 
-    setRecommendations({
+    const rec = {
       scores: normalizedScores,
       topStreams,
       courses: generateCourseRecommendations(topStreams),
       colleges: generateCollegeRecommendations(profile.location, topStreams),
       resources: generateResourceRecommendations(topStreams)
-    });
+    };
+    setRecommendations(rec);
+    return rec;
   };
 
   const generateCourseRecommendations = (topStreams) => {
@@ -208,9 +250,9 @@ const PersonalizedDashboard = () => {
           className="text-center mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Welcome back, {user?.displayName || "Student"}!
+            Welcome back, {user?.name || user?.displayName || "Student"}!
           </h1>
-          <p className="text-gray-600 text-lg">Your personalized career guidance dashboard</p>
+          <p className="text-gray-600 text-lg">Your personalized CareerVerse dashboard</p>
         </motion.div>
 
         {/* Quick Actions */}

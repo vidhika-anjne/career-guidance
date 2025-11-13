@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import PathConstants from "../../routes/PathConstants";
 
 const Arts = () => {
-  const bg = require("../../assets/Images/arts.jpeg");
 
   return (
     <div

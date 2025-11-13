@@ -1,18 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import PathConstants from "../routes/PathConstants";
-import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
 function NavBar({ home = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   console.log(location.pathname);
-
-  const onLogOut = () => {
-    const auth = getAuth();
-    auth.signOut();
-    navigate(PathConstants.ABOUT);
-  };
 
   if (location.pathname === "/user") {
     return (

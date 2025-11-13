@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
-import { db } from "../../firebase.config";
+// Firebase imports removed - using mock data instead
 import { Link } from "react-router-dom";
 import PathConstants from "../../routes/PathConstants";
 
@@ -26,17 +18,17 @@ const ManageColleges = () => {
   const capitalizeWords = (str) => {
     return str.replace(/\b\w/g, (char) => char.toUpperCase());
   };
-  const collectionRef = collection(db, "colleges-list");
 
-  // Fetch colleges from Firestore
+  // Mock fetch colleges function
   const fetchColleges = async () => {
     setLoading(true);
-    const querySnapshot = await getDocs(collectionRef);
-    const collegesData = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setColleges(collegesData);
+    // Mock college data
+    const mockColleges = [
+      { id: "1", name: "Sample Engineering College", city: "Mumbai", state: "Maharashtra", type: "technology" },
+      { id: "2", name: "Commerce Institute", city: "New Delhi", state: "Delhi", type: "commerce" },
+      { id: "3", name: "Arts University", city: "Bangalore", state: "Karnataka", type: "arts" }
+    ];
+    setColleges(mockColleges);
     setLoading(false);
   };
 
@@ -74,12 +66,11 @@ const ManageColleges = () => {
 
     try {
       if (currentCollege) {
-        // Update existing college
-        const docRef = doc(db, "colleges-list", currentCollege.id);
-        await updateDoc(docRef, formattedData);
+        // Mock update existing college
+        console.log("Updating college:", formattedData);
       } else {
-        // Add new college
-        await addDoc(collectionRef, formattedData);
+        // Mock add new college
+        console.log("Adding new college:", formattedData);
       }
       fetchColleges();
       setModalOpen(false);
@@ -92,7 +83,8 @@ const ManageColleges = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this college?")) {
       try {
-        await deleteDoc(doc(db, "colleges-list", id));
+        // Mock delete college
+        console.log("Deleting college with id:", id);
         fetchColleges();
       } catch (error) {
         console.error("Error deleting college: ", error);

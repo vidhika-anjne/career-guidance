@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../../firebase.config";
-import {
-  collection,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+// Firebase imports removed - using mock data instead
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import PathConstants from "../../routes/PathConstants";
@@ -18,15 +11,16 @@ const ManageUsers = () => {
   const [editUserModal, setEditUserModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Fetch users from Firestore
+  // Mock fetch users function
   const fetchUsers = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const userList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(userList);
+      // Mock user data
+      const mockUsers = [
+        { id: "1", name: "John Doe", email: "john@example.com", role: "user" },
+        { id: "2", name: "Jane Smith", email: "jane@example.com", role: "admin" },
+        { id: "3", name: "Bob Wilson", email: "bob@example.com", role: "user" }
+      ];
+      setUsers(mockUsers);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching users: ", error);
@@ -38,10 +32,10 @@ const ManageUsers = () => {
     fetchUsers();
   }, []);
 
-  // Delete user
+  // Mock delete user
   const deleteUser = async (id) => {
     try {
-      await deleteDoc(doc(db, "users", id));
+      console.log("Deleting user with id:", id);
       setUsers(users.filter((user) => user.id !== id));
       toast.success("User Deleted successfully from database");
     } catch (error) {
@@ -49,11 +43,10 @@ const ManageUsers = () => {
     }
   };
 
-  // Update user
+  // Mock update user
   const updateUser = async (id, updatedData) => {
     try {
-      const userRef = doc(db, "users", id);
-      await updateDoc(userRef, updatedData);
+      console.log("Updating user:", id, updatedData);
       setUsers(
         users.map((user) =>
           user.id === id ? { ...user, ...updatedData } : user
@@ -65,11 +58,10 @@ const ManageUsers = () => {
     }
   };
 
-  // Promote user to admin
+  // Mock promote user to admin
   const promoteToAdmin = async (id) => {
     try {
-      const userRef = doc(db, "users", id);
-      await updateDoc(userRef, { role: "admin" });
+      console.log("Promoting user to admin:", id);
       setUsers(
         users.map((user) =>
           user.id === id ? { ...user, role: "admin" } : user
