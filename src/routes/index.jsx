@@ -2,6 +2,7 @@ import About from "../pages/About";
 import AdminPage from "../pages/admin/AdminPage";
 import ManageCollegesPage from "../pages/admin/ManageCollegesPage";
 import ManageUsersPage from "../pages/admin/ManageUsersPage";
+import ManageTestsPage from "../pages/admin/ManageTestsPage";
 import Arts from "../pages/arts/Arts";
 import FineArts from "../pages/arts/FineArts";
 import HistoryCulture from "../pages/arts/HistoryCulture";
@@ -38,179 +39,186 @@ import Technology from "../pages/technology/Technology";
 import PathConstants from "./PathConstants";
 import AptitudeTest from "../components/AptitudeTest";
 import CareerPathMapping from "../components/CareerPathMapping";
-import CollegeMap from "../components/CollegeMap";
 import TimelineTracker from "../components/TimelineTracker";
 import PersonalizedDashboard from "../components/PersonalizedDashboard";
+import Login from "../pages/Login";
+import SignUp from "../pages/SignUp";
+import ForgotPassword from "../pages/ForgotPassword";
 
-const routes = [{ path: PathConstants.ABOUT, element: <About /> }];
+const routes = [
+  { path: PathConstants.ABOUT, element: <About /> },
+  { path: PathConstants.LOGIN, element: <Login /> },
+  { path: PathConstants.SIGNUP, element: <SignUp /> },
+  { path: PathConstants.FORGOTPASSWORD, element: <ForgotPassword /> },
+];
 
 export const adminRoutes = [
   {
-    path: PathConstants.ADMIN,
+    path: "",
     element: <AdminPage />,
   },
   {
-    path: PathConstants.MANAGEUSERS,
+    path: "manage-users",
     element: <ManageUsersPage />,
   },
   {
-    path: PathConstants.MANAGECOLLEGES,
+    path: "manage-colleges",
     element: <ManageCollegesPage />,
+  },
+  {
+    path: "manage-tests",
+    element: <ManageTestsPage />,
   },
 ];
 
 export const userRoutes = [
   {
-    path: PathConstants.HOME,
+    path: "",
     element: <Home />,
   },
   {
-    path: PathConstants.COMMERCE,
+    path: "commerce",
     element: <Commerce />,
   },
   {
-    path: PathConstants.SCIENCE,
+    path: "science",
     element: <Science />,
   },
   {
-    path: PathConstants.TECHNOLOGY,
+    path: "technology",
     element: <Technology />,
   },
   {
-    path: PathConstants.DESIGN,
+    path: "design",
     element: <Design />,
   },
   {
-    path: PathConstants.ARTS,
+    path: "arts",
     element: <Arts />,
   },
 
   {
-    path: PathConstants.PROFILE,
+    path: "profile",
     element: <Profile />,
   },
   {
-    path: PathConstants.SEARCH,
+    path: "search",
     element: <SearchPage />,
   },
   {
-    path: PathConstants.APTITUDE,
+    path: "aptitude-test",
     element: <AptitudeTest />,
   },
   {
-    path: PathConstants.CAREERPATHS,
+    path: "career-paths",
     element: <CareerPathMapping />,
   },
   {
-    path: PathConstants.COLLEGEMAP,
-    element: <CollegeMap />,
-  },
-  {
-    path: PathConstants.TIMELINE,
+    path: "timeline",
     element: <TimelineTracker />,
   },
   {
-    path: PathConstants.DASHBOARD,
+    path: "dashboard",
     element: <PersonalizedDashboard />,
   },
   {
-    path: PathConstants.MEDICINE,
+    path: "science/medicine",
     element: <Medicine />,
   },
   {
-    path: PathConstants.ENGINEERING,
+    path: "science/engineering",
     element: <Engineering />,
   },
   {
-    path: PathConstants.BIOTECHNOLOGY,
+    path: "science/biotech",
     element: <Biotechnology />,
   },
   {
-    path: PathConstants.EVS,
+    path: "science/evs",
     element: <EnvironmentalScience />,
   },
   {
-    path: PathConstants.RESEARCH,
+    path: "science/research",
     element: <ResearchScience />,
   },
   {
-    path: PathConstants.ACCOUNTING,
+    path: "commerce/accounting",
     element: <Accounting />,
   },
   {
-    path: PathConstants.MARKETING,
+    path: "commerce/marketing",
     element: <Marketing />,
   },
   {
-    path: PathConstants.FINANCE,
+    path: "commerce/finance",
     element: <Finance />,
   },
   {
-    path: PathConstants.BUSINESS,
+    path: "commerce/business",
     element: <BusinessManagement />,
   },
   {
-    path: PathConstants.ECONOMICS,
+    path: "commerce/economics",
     element: <Economics />,
   },
   {
-    path: PathConstants.SOFTWAREDEV,
+    path: "technology/software_devolpoment",
     element: <SoftwareDevolopment />,
   },
   {
-    path: PathConstants.CYBERSECURITY,
+    path: "technology/cyber_security",
     element: <CyberSecurity />,
   },
   {
-    path: PathConstants.DATASCIENCE,
+    path: "technology/data_science",
     element: <DataScience />,
   },
   {
-    path: PathConstants.AI,
+    path: "technology/artificial_intelligence",
     element: <ArtificialIntelligence />,
   },
   {
-    path: PathConstants.CLOUD,
+    path: "technology/cloud_computing",
     element: <CloudComputing />,
   },
   {
-    path: PathConstants.FINEARTS,
+    path: "arts/fine_arts",
     element: <FineArts />,
   },
   {
-    path: PathConstants.LITERATURE,
+    path: "arts/literature",
     element: <Literature />,
   },
   {
-    path: PathConstants.PERFORMINGARTS,
+    path: "arts/performing-arts",
     element: <PerformingArts />,
   },
   {
-    path: PathConstants.HISTORYANDCULTURE,
+    path: "arts/history_and_culture",
     element: <HistoryCulture />,
   },
   {
-    path: PathConstants.JOURNALISM,
+    path: "arts/journalism",
     element: <Journalism />,
   },
   {
-    path: PathConstants.GRAPHICDESIGN,
+    path: "design/graphic_design",
     element: <GraphicDesign />,
   },
   {
-    path: PathConstants.INTERIORDESIGN,
+    path: "design/interior_design",
     element: <InteriorDesign />,
   },
   {
-    path: PathConstants.INDUSTRYDESIGN,
+    path: "design/industry_design",
     element: <IndustrialDesign />,
   },
   {
-    path: PathConstants.UIUX,
+    path: "design/ui-ux",
     element: <UIUXDesign />,
   },
   {
-    path: PathConstants.FASHION,
+    path: "design/fashion_design",
     element: <FashionDesign />,
   },
   //   ),

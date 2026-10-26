@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PathConstants from "../routes/PathConstants";
 import { toast } from "react-toastify";
@@ -9,6 +9,10 @@ const Login = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
+  const [otp, setOtp] = useState("");
+  const [googleClientId, setGoogleClientId] = useState("");
+  const googleDivRef = useRef(null);
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
@@ -24,19 +28,37 @@ const Login = () => {
     setLoading(true);
     try {
       const email = String(formData.email || "").trim();
-      if (!/@gmail\.com$/i.test(email)) {
-        throw new Error("Please use a @gmail.com email");
+      const password = formData.password; // Get password from formData
+      if (!/@gmail\.(com|in)$/i.test(email)) {
+        throw new Error("Please use a @gmail.com or @gmail.in email");
       }
+      // DIRECT PASSWORD LOGIN (no OTP)
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password: formData.password }),
+        body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Login failed");
+
+      if (!res.ok) {
+        if (data?.needsSignup && data?.email) {
+          toast.info("Account not found. Please sign up first.");
+          navigate(`${PathConstants.SIGNUP}?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
+        throw new Error(data?.message || "Login failed");
+      }
+
       toast.success("Login successful! Welcome to CareerVerse");
-      navigate(PathConstants.HOME);
+
+      // ADMIN MODULE: Redirect admins to admin panel, students to user dashboard
+      if (data?.user?.role === 'admin') {
+        navigate(PathConstants.ADMIN);
+      } else {
+        navigate(PathConstants.HOME);
+      }
     } catch (err) {
       toast.error(err.message || "Login failed");
     } finally {
@@ -51,12 +73,24 @@ const Login = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ credential: response?.credential }),
+        body: JSON.stringify({ credential: response?.credential, mode: "login" }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Google sign-in failed");
+      if (!res.ok) {
+        if (data?.needsSignup && data?.email) {
+          toast.info("Account not found. Please sign up first.");
+          navigate(`${PathConstants.SIGNUP}?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
+        throw new Error(data?.message || "Google sign-in failed");
+      }
       toast.success("Login successful! Welcome to CareerVerse");
-      navigate(PathConstants.HOME);
+      // ADMIN MODULE: Redirect admins to admin panel, students to user dashboard
+      if (data?.user?.role === 'admin') {
+        navigate(PathConstants.ADMIN);
+      } else {
+        navigate(PathConstants.HOME);
+      }
     } catch (err) {
       toast.error(err.message || "Google sign-in failed");
     } finally {
@@ -70,22 +104,41 @@ const Login = () => {
         toast.error("Google sign-in not configured");
         return;
       }
-      const res = await fetch(`${API_BASE}/api/config/public`);
-      const cfg = await res.json();
-      const clientId = cfg?.googleClientId;
-      if (!clientId) {
+      const cid = googleClientId || (await (await fetch(`${API_BASE}/api/config/public`)).json()).googleClientId;
+      if (!cid) {
         toast.error("Google sign-in not configured");
         return;
       }
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleResponse,
-      });
+      window.google.accounts.id.initialize({ client_id: cid, callback: handleGoogleResponse });
+      if (googleDivRef.current && googleDivRef.current.childElementCount === 0) {
+        window.google.accounts.id.renderButton(googleDivRef.current, { theme: "outline", size: "large", type: "standard" });
+      }
       window.google.accounts.id.prompt();
     } catch (_) {
       toast.error("Google sign-in not configured");
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/config/public`);
+        const cfg = await res.json();
+        if (!mounted) return;
+        const cid = cfg?.googleClientId;
+        if (cid && window.google) {
+          setGoogleClientId(cid);
+          window.google.accounts.id.initialize({ client_id: cid, callback: handleGoogleResponse });
+          if (googleDivRef.current && googleDivRef.current.childElementCount === 0) {
+            window.google.accounts.id.renderButton(googleDivRef.current, { theme: "outline", size: "large", type: "standard" });
+          }
+        }
+      } catch (_) { }
+    })();
+    return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -118,6 +171,7 @@ const Login = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter your email"
               required
+              disabled={step === 2}
             />
           </div>
 
@@ -134,8 +188,19 @@ const Login = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter your password"
               required
+              disabled={step === 2}
             />
+            <div className="mt-2 text-right">
+              <button
+                type="button"
+                onClick={() => navigate(PathConstants.FORGOTPASSWORD)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
+
 
           <button
             type="submit"
@@ -145,7 +210,7 @@ const Login = () => {
             {loading ? (
               <div className="flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Signing in...
+                Logging in...
               </div>
             ) : (
               "Sign In"
@@ -153,14 +218,9 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Google Login Button */}
+        {/* Google Sign-in (official button) */}
         <div className="mt-4">
-          <button
-            onClick={handleGoogleSignIn}
-            className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors font-medium"
-          >
-            Continue with Google
-          </button>
+          <div ref={googleDivRef} className="flex justify-center" />
         </div>
 
         {/* Footer Links */}

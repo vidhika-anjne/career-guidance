@@ -40,9 +40,8 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-10 w-64 h-full bg-white text-black p-5 transition-transform duration-300 ease-in-out transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 z-10 w-64 h-full bg-white text-black p-5 transition-transform duration-300 ease-in-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Sidebar header */}
 
@@ -78,14 +77,6 @@ const Sidebar = () => {
               className="block px-3 py-2 transition duration-200 ease-in-out rounded-none hover:bg-gray-600"
             >
               Career Paths
-            </Link>
-          </li>
-          <li>
-            <Link
-              to={PathConstants.COLLEGEMAP}
-              className="block px-3 py-2 transition duration-200 ease-in-out rounded-none hover:bg-gray-600"
-            >
-              Find Colleges
             </Link>
           </li>
           <li>

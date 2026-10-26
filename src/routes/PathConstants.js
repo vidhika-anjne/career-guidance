@@ -4,6 +4,7 @@ const PathConstants = {
   ADMIN: "/admin",
   MANAGEUSERS: "/admin/manage-users",
   MANAGECOLLEGES: "/admin/manage-colleges",
+  MANAGETESTS: "/admin/manage-tests",
 
   SCIENCE: "/user/science",
   MEDICINE: "/user/science/medicine",
@@ -46,10 +47,8 @@ const PathConstants = {
   PROFILE: "/user/profile",
   SEARCH: "/user/search",
   APTITUDE: "/user/aptitude-test",
-  CAREERPATHS: "/user/career-paths", 
-  COLLEGEMAP: "/user/college-map",
+  CAREERPATHS: "/user/career-paths",
   TIMELINE: "/user/timeline",
   DASHBOARD: "/user/dashboard",
 };
-
 export default PathConstants;

@@ -1,10 +1,12 @@
 {
   "name": "ansh-auth-server",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "node server.js"
+    "start": "node index.js",
+    "dev": "node index.js",
+    "import:colleges": "node ./scripts/import_colleges_from_csv.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -14,6 +16,8 @@
     "express": "^4.19.2",
     "google-auth-library": "^9.14.2",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.9.7"
+    "mysql2": "^3.9.7",
+    "nodemailer": "^6.9.14",
+    "csv-parse": "^5.5.3"
   }
 }

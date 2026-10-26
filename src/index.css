@@ -258,3 +258,10 @@ input[type="text"], input[type="password"], input[type="email"],
 input[type="search"], input[type="number"] {
   cursor: text;
 }
+
+summary {
+  cursor: default !important;
+}
+details summary {
+  cursor: default !important;
+}

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-// Firebase imports removed - using mock data instead
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import PathConstants from "../../routes/PathConstants";
@@ -10,80 +9,89 @@ const ManageUsers = () => {
   const [search, setSearch] = useState("");
   const [editUserModal, setEditUserModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-
-  // Mock fetch users function
-  const fetchUsers = async () => {
-    try {
-      // Mock user data
-      const mockUsers = [
-        { id: "1", name: "John Doe", email: "john@example.com", role: "user" },
-        { id: "2", name: "Jane Smith", email: "jane@example.com", role: "admin" },
-        { id: "3", name: "Bob Wilson", email: "bob@example.com", role: "user" }
-      ];
-      setUsers(mockUsers);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching users: ", error);
-      setLoading(false);
-    }
-  };
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [search]);
 
-  // Mock delete user
-  const deleteUser = async (id) => {
+  const fetchUsers = async () => {
     try {
-      console.log("Deleting user with id:", id);
+      setLoading(true);
+      const url = `${API_BASE}/api/admin/users?search=${encodeURIComponent(search)}&limit=100`;
+      const res = await fetch(url, { credentials: "include" });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
+      }
+
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUser = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete user: ${name}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/user/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to delete user");
+      }
+
       setUsers(users.filter((user) => user.id !== id));
-      toast.success("User Deleted successfully from database");
+      toast.success(`User ${name} deleted successfully`);
     } catch (error) {
-      console.error("Error deleting user: ", error);
+      console.error("Error deleting user:", error);
+      toast.error(error.message);
     }
   };
 
-  // Mock update user
-  const updateUser = async (id, updatedData) => {
-    try {
-      console.log("Updating user:", id, updatedData);
-      setUsers(
-        users.map((user) =>
-          user.id === id ? { ...user, ...updatedData } : user
-        )
-      );
-      setEditUserModal(false);
-    } catch (error) {
-      console.error("Error updating user: ", error);
+  const promoteToAdmin = async (id, name) => {
+    if (!window.confirm(`Promote ${name} to admin?`)) {
+      return;
     }
-  };
 
-  // Mock promote user to admin
-  const promoteToAdmin = async (id) => {
     try {
-      console.log("Promoting user to admin:", id);
+      const res = await fetch(`${API_BASE}/api/admin/user/${id}/promote`, {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to promote user");
+      }
+
+      // Update user in local state
       setUsers(
         users.map((user) =>
           user.id === id ? { ...user, role: "admin" } : user
         )
       );
+      toast.success(`User ${name} promoted to admin`);
     } catch (error) {
-      console.error("Error promoting user: ", error);
+      console.error("Error promoting user:", error);
+      toast.error(error.message);
     }
   };
 
-  // Open edit modal
-  const openEditModal = (user) => {
-    setCurrentUser(user);
-    setEditUserModal(true);
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
   };
-
-  // Handle search functionality
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen p-6 bg-gray-100">
@@ -91,10 +99,10 @@ const ManageUsers = () => {
       <div className="flex items-center justify-between p-4 mb-6 text-white bg-blue-600 rounded-md shadow-md">
         <h1 className="text-3xl font-bold">Manage Users</h1>
         <Link
-          to={PathConstants.ADMIN} // Link to Admin Dashboard
+          to={PathConstants.ADMIN}
           className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-700"
         >
-          Go to Admin Dashboard
+          ← Back to Dashboard
         </Link>
       </div>
 
@@ -112,7 +120,7 @@ const ManageUsers = () => {
       {/* Loading State */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <span className="loading loading-spinner loading-lg"></span>
+          <div className="w-12 h-12 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
         </div>
       ) : (
         <div className="p-4 bg-white rounded-lg shadow">
@@ -124,47 +132,54 @@ const ManageUsers = () => {
                   <th className="px-4 py-3">#</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Tests</th>
                   <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Joined</th>
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user, index) => (
+                {users.length > 0 ? (
+                  users.map((user, index) => (
                     <tr key={user.id} className="hover:bg-gray-100">
                       <td className="px-4 py-3">{index + 1}</td>
-                      <td className="px-4 py-3">{user.name}</td>
+                      <td className="px-4 py-3">{user.name || "N/A"}</td>
                       <td className="px-4 py-3">{user.email}</td>
                       <td className="px-4 py-3">
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {user.class_level || "Not Set"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{user.testsCompleted || 0} completed</td>
+                      <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.role === "Admin"
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === "admin"
                               ? "bg-green-100 text-green-600"
                               : "bg-blue-100 text-blue-600"
-                          }`}
+                            }`}
                         >
-                          {user.role}
+                          {user.role || "student"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">
+                        {formatDate(user.created_at)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => openEditModal(user)}
-                            className="px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600"
-                          >
-                            Edit
-                          </button>
-                          {user.role !== "Admin" && (
+                          {user.role !== "admin" && (
                             <button
-                              onClick={() => promoteToAdmin(user.id)}
-                              className="px-3 py-1 text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
+                              onClick={() => promoteToAdmin(user.id, user.name)}
+                              className="px-3 py-1 text-xs text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
+                              title="Promote to Admin"
                             >
-                              Promote to Admin
+                              Promote
                             </button>
                           )}
                           <button
-                            onClick={() => deleteUser(user.id)}
-                            className="px-3 py-1 text-white bg-red-500 rounded-md hover:bg-red-600"
+                            onClick={() => deleteUser(user.id, user.name)}
+                            className="px-3 py-1 text-xs text-white bg-red-500 rounded-md hover:bg-red-600"
+                            title="Delete User"
                           >
                             Delete
                           </button>
@@ -174,76 +189,21 @@ const ManageUsers = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="py-4 text-center text-gray-500">
-                      No users found.
+                    <td colSpan="8" className="py-8 text-center text-gray-500">
+                      {search ? `No users found matching "${search}"` : "No users found."}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {/* Edit User Modal */}
-      {editUserModal && currentUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="p-6 bg-white rounded-lg w-96">
-            <h2 className="mb-4 text-xl font-bold">Edit User</h2>
-            <div className="mb-4">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                defaultValue={currentUser.name}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                onChange={(e) =>
-                  setCurrentUser({ ...currentUser, name: e.target.value })
-                }
-              />
+          {/* Summary */}
+          {users.length > 0 && (
+            <div className="mt-4 text-sm text-gray-600">
+              Showing {users.length} user{users.length !== 1 ? "s" : ""}
             </div>
-            <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                defaultValue={currentUser.email}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                onChange={(e) =>
-                  setCurrentUser({ ...currentUser, email: e.target.value })
-                }
-              />
-            </div>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setEditUserModal(false)}
-                className="px-4 py-2 text-white bg-gray-500 rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() =>
-                  updateUser(currentUser.id, {
-                    name: currentUser.name,
-                    email: currentUser.email,
-                  })
-                }
-                className="px-4 py-2 text-white bg-blue-500 rounded-md"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

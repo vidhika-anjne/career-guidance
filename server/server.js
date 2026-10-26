@@ -1,14 +1,21 @@
-import { PORT } from "./config/env.js";
-import { ensureDatabase } from "./db/pool.js";
-import app from "./app.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-ensureDatabase()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to initialize database", err);
-    process.exit(1);
-  });
+import { ensureDatabase } from "./db/pool.js";
+import express from "express";
+
+const app = express();
+
+// ensure DB
+await ensureDatabase();
+
+// test route
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+
+// start server ONCE
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
+});

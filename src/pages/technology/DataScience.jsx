@@ -14,7 +14,7 @@ const DataScience = () => {
       {/* Header Section */}
       <header className="sticky top-0 z-10 py-5 text-white bg-black bg-opacity-70">
         <h1 className="text-3xl text-center">
-          Explore Software Devolopment Courses
+          Explore Data Science Courses
         </h1>
         <nav>
           <ul className="flex justify-center mt-4 space-x-6">
@@ -59,6 +59,53 @@ const DataScience = () => {
         </p>
       </section>
 
+      {/* Roles, Skills, Tools, Salary & Roadmap */}
+      <section className="px-5 py-10 bg-white/80">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">What You Can Do in Data Science</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {["Data Analyst","Data Scientist","Machine Learning Engineer","Business Intelligence Analyst","Data Engineer","AI Researcher"].map(role => (
+              <div key={role} className="p-4 rounded-lg shadow bg-white">
+                <p className="font-semibold text-red-500">{role}</p>
+                <p className="text-sm text-gray-600 mt-1">Brief: Work with data to analyze, build models, and drive decisions.</p>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-2">Key Skills</h3>
+          <div className="flex flex-wrap gap-2">
+            {["Python","SQL","Statistics","Machine Learning","Data Visualization","Cloud (AWS/GCP/Azure)"].map(s => (
+              <span key={s} className="px-3 py-1 text-sm rounded-full bg-blue-50 text-blue-700 border border-blue-200">{s}</span>
+            ))}
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-2">Common Tools</h3>
+          <div className="flex flex-wrap gap-2">
+            {["Pandas","NumPy","scikit-learn","TensorFlow/PyTorch","Tableau/Power BI","Spark"].map(t => (
+              <span key={t} className="px-3 py-1 text-sm rounded-full bg-green-50 text-green-700 border border-green-200">{t}</span>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div className="p-4 rounded-lg bg-gray-50 border">
+              <h4 className="font-semibold text-gray-800 mb-1">Salary & Growth</h4>
+              <p className="text-sm text-gray-700">Early career: ₹5–12 LPA, mid-level can reach ₹12–25 LPA+, depending on role, company, and location.</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gray-50 border">
+              <h4 className="font-semibold text-gray-800 mb-1">Suggested Roadmap</h4>
+              <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
+                <li>Strengthen math, stats, and programming (Python/SQL)</li>
+                <li>Build ML foundations (supervised/unsupervised)</li>
+                <li>Hands-on projects with real datasets</li>
+                <li>Learn data viz and storytelling</li>
+                <li>Explore cloud and big data tools</li>
+                <li>Create a portfolio and apply for internships/jobs</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Relevant Courses Section */}
       <section className="px-5 py-10">
         <h2 className="mb-8 text-2xl font-semibold text-center text-gray-900">
@@ -74,7 +121,7 @@ const DataScience = () => {
               learning, and statistical techniques.
             </p>
             <details className="mt-3">
-              <summary className="text-red-500 cursor-pointer">
+              <summary className="text-red-500">
                 View Entrance Exams
               </summary>
               <p className="mt-2">
@@ -156,12 +203,12 @@ const DataScience = () => {
         <h2 className="mb-4 text-2xl font-semibold text-red-500">
           Ready to Start Your Data Science Journey?
         </h2>
-        <button
-          onClick={() => (window.location.href = "college-finder.html")}
+        <Link
+          to={`${PathConstants.SEARCH}?path=technology`}
           className="px-6 py-3 text-white bg-red-500 rounded-lg hover:bg-red-400"
         >
           Find Data Science Colleges
-        </button>
+        </Link>
       </section>
     </div>
   );

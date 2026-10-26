@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const pool = getPool();
-    const { name, state, city, types, ownership, path, limit = 50, offset = 0 } = req.query;
+    const { name, state, city, types, ownership, path, min_rank, max_rank, min_score, max_score, limit = 50, offset = 0 } = req.query;
     const where = [];
     const params = [];
     if (name) { where.push("name LIKE ?"); params.push(`%${name}%`); }
@@ -21,12 +21,34 @@ router.get("/", async (req, res) => {
       else if (list.length > 1) { where.push(`type IN (${list.map(() => "?").join(",")})`); params.push(...list.map(s => s.toLowerCase())); }
     }
     if (path) { where.push("JSON_CONTAINS(paths, JSON_QUOTE(?))"); params.push(String(path).toLowerCase()); }
+    // Ranking filters
+    if (min_rank) { where.push("rank_position >= ?"); params.push(Number(min_rank)); }
+    if (max_rank) { where.push("rank_position <= ?"); params.push(Number(max_rank)); }
+    if (min_score) { where.push("total_score >= ?"); params.push(Number(min_score)); }
+    if (max_score) { where.push("total_score <= ?"); params.push(Number(max_score)); }
     const sql = `SELECT id, name, state, city, type, ownership, description, website, latitude, longitude,
-                        ranking, fees_min, fees_max, exams, courses, accreditation, email, phone
+                        ranking, fees_min, fees_max, exams, courses, accreditation, email, phone,
+                        institute_id, tlr, rpc, go_score, oi, perception, total_score, rank_position
                  FROM colleges ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-                 ORDER BY name LIMIT ? OFFSET ?`;
+                 ORDER BY CASE WHEN total_score IS NOT NULL THEN 0 ELSE 1 END, total_score DESC, name LIMIT ? OFFSET ?`;
     params.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, params);
+    return res.json({ items: rows });
+  } catch (e) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET /api/colleges/cities - Get unique cities with college counts
+router.get("/cities", async (req, res) => {
+  try {
+    const pool = getPool();
+    const sql = `SELECT city, state, COUNT(*) as count
+                 FROM colleges
+                 WHERE city IS NOT NULL AND city != ''
+                 GROUP BY city, state
+                 ORDER BY city ASC`;
+    const [rows] = await pool.query(sql);
     return res.json({ items: rows });
   } catch (e) {
     return res.status(500).json({ message: "Server error" });
@@ -73,10 +95,24 @@ router.post("/", authMiddleware, async (req, res) => {
     const pool = getPool();
     const { name, state, city, type, ownership = 'government', paths = [], description = null, website = null, latitude = null, longitude = null } = req.body || {};
     if (!name || !state || !city || !type) return res.status(400).json({ message: 'name, state, city, type are required' });
-    const [result] = await pool.query(
-      'INSERT INTO colleges (name, state, city, type, ownership, paths, description, website, latitude, longitude) VALUES (?, ?, ?, ?, ?, JSON_ARRAY(?), ?, ?, ?, ?)',
-      [name, String(state).toLowerCase(), String(city).toLowerCase(), String(type).toLowerCase(), String(ownership).toLowerCase(), ...(Array.isArray(paths) ? paths.map(p => String(p).toLowerCase()) : []), description, website, latitude, longitude]
-    );
+
+    const pathsArr = Array.isArray(paths) ? paths.map(p => String(p).toLowerCase()) : [];
+    const pathsExpr = pathsArr.length ? `JSON_ARRAY(${pathsArr.map(() => '?').join(',')})` : 'JSON_ARRAY()';
+    const params = [
+      name,
+      String(state).toLowerCase(),
+      String(city).toLowerCase(),
+      String(type).toLowerCase(),
+      String(ownership).toLowerCase(),
+      ...pathsArr,
+      description,
+      website,
+      latitude,
+      longitude,
+    ];
+    const sql = `INSERT INTO colleges (name, state, city, type, ownership, paths, description, website, latitude, longitude)
+                 VALUES (?, ?, ?, ?, ?, ${pathsExpr}, ?, ?, ?, ?)`;
+    const [result] = await pool.query(sql, params);
     const id = result.insertId;
     const [rows] = await pool.query('SELECT * FROM colleges WHERE id=?', [id]);
     return res.status(201).json({ item: rows[0] });
@@ -97,7 +133,12 @@ router.put("/:id", authMiddleware, async (req, res) => {
     if (city != null) { fields.push('city=?'); params.push(String(city).toLowerCase()); }
     if (type != null) { fields.push('type=?'); params.push(String(type).toLowerCase()); }
     if (ownership != null) { fields.push('ownership=?'); params.push(String(ownership).toLowerCase()); }
-    if (paths != null) { fields.push('paths=JSON_ARRAY(?)'); params.push(...(Array.isArray(paths) ? paths.map(p => String(p).toLowerCase()) : [])); }
+    if (paths != null) {
+      const pathsArr = Array.isArray(paths) ? paths.map(p => String(p).toLowerCase()) : [];
+      const pathsExpr = pathsArr.length ? `JSON_ARRAY(${pathsArr.map(() => '?').join(',')})` : 'JSON_ARRAY()';
+      fields.push(`paths=${pathsExpr}`);
+      params.push(...pathsArr);
+    }
     if (description !== undefined) { fields.push('description=?'); params.push(description); }
     if (website !== undefined) { fields.push('website=?'); params.push(website); }
     if (latitude !== undefined) { fields.push('latitude=?'); params.push(latitude); }

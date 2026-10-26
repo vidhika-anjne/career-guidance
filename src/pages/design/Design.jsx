@@ -183,8 +183,8 @@ const Design = () => {
           Ready to Start Your Journey?
         </h2>
         <Link
-          to={PathConstants.SEARCH}
-          className="px-6 py-2 text-white transition bg-red-400 rounded hover:bg-red-500"
+          to={`${PathConstants.SEARCH}?path=design`}
+          className="px-6 py-2 text-white transition bg-red-400 rounded hover:bg-red-500 cursor-pointer"
         >
           Find Design Colleges
         </Link>

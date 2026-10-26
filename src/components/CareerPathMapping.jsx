@@ -2,18 +2,26 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { careerPathMappings } from "../data/careerPathMapping";
 import { streamInfo } from "../data/aptitudeQuestions";
+import CourseInfoModal from "./CourseInfoModal";
 
 const CareerPathMapping = () => {
   const [selectedStream, setSelectedStream] = useState("science");
   const [selectedPath, setSelectedPath] = useState(0);
+  const [courseModalOpen, setCourseModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
   const currentPaths = careerPathMappings[selectedStream]?.paths || [];
   const currentPath = currentPaths[selectedPath];
 
+  const handleCourseClick = (courseName) => {
+    setSelectedCourse(courseName);
+    setCourseModalOpen(true);
+  };
+
   const getLevelColor = (level) => {
     const colors = {
       "12th": "#ef4444",
-      "UG": "#3b82f6", 
+      "UG": "#3b82f6",
       "PG": "#10b981",
       "PhD": "#8b5cf6",
       "Intermediate": "#f59e0b",
@@ -57,11 +65,10 @@ const CareerPathMapping = () => {
                   setSelectedStream(key);
                   setSelectedPath(0);
                 }}
-                className={`p-4 rounded-xl border-2 transition-all duration-300 ${
-                  selectedStream === key
-                    ? `border-2 text-white`
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                }`}
+                className={`p-4 rounded-xl border-2 transition-all duration-300 ${selectedStream === key
+                  ? `border-2 text-white`
+                  : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
                 style={{
                   backgroundColor: selectedStream === key ? stream.color : 'white',
                   borderColor: selectedStream === key ? stream.color : '#e5e7eb',
@@ -92,11 +99,10 @@ const CareerPathMapping = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedPath(index)}
-                  className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                    selectedPath === index
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
+                  className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${selectedPath === index
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
                 >
                   <h4 className="font-bold text-lg text-gray-800">{path.title}</h4>
                   <p className="text-gray-600 text-sm mt-1">
@@ -125,7 +131,7 @@ const CareerPathMapping = () => {
               <div className="relative">
                 {/* Timeline Line */}
                 <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 transform -translate-y-1/2"></div>
-                
+
                 {/* Timeline Stages */}
                 <div className="relative flex justify-between items-center">
                   {currentPath.stages.map((stage, index) => (
@@ -144,10 +150,13 @@ const CareerPathMapping = () => {
                       >
                         {index + 1}
                       </div>
-                      
-                      {/* Stage Info Card */}
-                      <div className="mt-4 bg-white border-2 rounded-xl p-4 shadow-md max-w-xs"
-                           style={{ borderColor: getLevelColor(stage.level) }}>
+
+                      {/* Stage Info Card - ALL CLICKABLE */}
+                      <button
+                        onClick={() => handleCourseClick(stage.course)}
+                        className="mt-4 bg-white border-2 rounded-xl p-4 shadow-md max-w-xs hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+                        style={{ borderColor: getLevelColor(stage.level) }}
+                      >
                         <div className="text-center">
                           <h4 className="font-bold text-gray-800 mb-1">{stage.level}</h4>
                           <p className="text-sm font-semibold text-gray-700 mb-2">{stage.course}</p>
@@ -167,8 +176,9 @@ const CareerPathMapping = () => {
                           {stage.salary && (
                             <p className="text-xs font-bold text-green-600">{stage.salary}</p>
                           )}
+                          <p className="text-xs text-blue-600 mt-2 font-medium">👆 Click for details</p>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Arrow */}
                       {index < currentPath.stages.length - 1 && (
@@ -187,7 +197,7 @@ const CareerPathMapping = () => {
               <div className="relative">
                 {/* Vertical Timeline Line */}
                 <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-200"></div>
-                
+
                 {/* Timeline Stages */}
                 <div className="space-y-8">
                   {currentPath.stages.map((stage, index) => (
@@ -205,10 +215,13 @@ const CareerPathMapping = () => {
                       >
                         {index + 1}
                       </div>
-                      
-                      {/* Stage Info Card */}
-                      <div className="ml-6 bg-white border-2 rounded-xl p-4 shadow-md flex-1"
-                           style={{ borderColor: getLevelColor(stage.level) }}>
+
+                      {/* Stage Info Card - ALL CLICKABLE */}
+                      <button
+                        onClick={() => handleCourseClick(stage.course)}
+                        className="ml-6 bg-white border-2 rounded-xl p-4 shadow-md flex-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                        style={{ borderColor: getLevelColor(stage.level) }}
+                      >
                         <h4 className="font-bold text-gray-800 mb-1">{stage.level}</h4>
                         <p className="text-sm font-semibold text-gray-700 mb-2">{stage.course}</p>
                         <p className="text-xs text-gray-500 mb-2">Duration: {stage.duration}</p>
@@ -227,7 +240,8 @@ const CareerPathMapping = () => {
                         {stage.salary && (
                           <p className="text-xs font-bold text-green-600">{stage.salary}</p>
                         )}
-                      </div>
+                        <p className="text-xs text-blue-600 mt-2 font-medium">👆 Tap for details</p>
+                      </button>
                     </motion.div>
                   ))}
                 </div>
@@ -268,6 +282,13 @@ const CareerPathMapping = () => {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Course Information Modal */}
+        <CourseInfoModal
+          isOpen={courseModalOpen}
+          onClose={() => setCourseModalOpen(false)}
+          courseName={selectedCourse}
+        />
       </div>
     </div>
   );

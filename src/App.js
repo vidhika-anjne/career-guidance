@@ -10,6 +10,7 @@ import UserLayout from "./layout/UserLayout";
 import AdminLayout from "./layout/AdminLayout";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   const router = createBrowserRouter(
@@ -28,6 +29,11 @@ function App() {
       {
         path: PathConstants.SIGNUP,
         element: <SignUp />,
+        errorElement: <Page404 />,
+      },
+      {
+        path: PathConstants.FORGOTPASSWORD,
+        element: <ForgotPassword />,
         errorElement: <Page404 />,
       },
       {

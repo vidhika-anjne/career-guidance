@@ -39,7 +39,7 @@ const Home = () => {
           <h2 className="mb-8 text-3xl font-bold text-center font-display select-none cursor-default">
             Discover Your Perfect Career Path
           </h2>
-          
+
           {/* New Features Section */}
           <div className="max-w-6xl mx-auto mb-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -53,7 +53,7 @@ const Home = () => {
                   <p className="text-sm text-slate-600">Discover your ideal career stream through our comprehensive assessment</p>
                 </div>
               </Link>
-              
+
               <Link
                 to={PathConstants.CAREERPATHS}
                 className="group p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 hover:brightness-105 bg-gradient-to-br from-emerald-50/70 via-white/50 to-emerald-100/40 backdrop-blur-xl ring-1 ring-emerald-200/50 hover:ring-emerald-300/70 cursor-pointer"
@@ -64,18 +64,7 @@ const Home = () => {
                   <p className="text-sm text-slate-600">Explore detailed career journeys from 12th grade to success</p>
                 </div>
               </Link>
-              
-              <Link
-                to={PathConstants.COLLEGEMAP}
-                className="group p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 hover:brightness-105 bg-gradient-to-br from-amber-50/70 via-white/50 to-amber-100/40 backdrop-blur-xl ring-1 ring-amber-200/50 hover:ring-amber-300/70 cursor-pointer"
-              >
-                <div className="text-center">
-                  <div className="mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center bg-amber-100 text-amber-600 text-2xl">🏫</div>
-                  <h3 className="text-xl font-bold mb-2 text-slate-800 font-display">Find Colleges</h3>
-                  <p className="text-sm text-slate-600">Discover government colleges near your location</p>
-                </div>
-              </Link>
-              
+
               <Link
                 to={PathConstants.TIMELINE}
                 className="group p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 hover:brightness-105 bg-gradient-to-br from-violet-50/70 via-white/50 to-violet-100/40 backdrop-blur-xl ring-1 ring-violet-200/50 hover:ring-violet-300/70 cursor-pointer"

@@ -185,10 +185,10 @@ const Technology = () => {
           Ready to Start Your Journey?
         </h2>
         <Link
-          to={PathConstants.SEARCH}
+          to={`${PathConstants.SEARCH}?path=technology`}
           className="px-6 py-2 text-white transition bg-red-400 rounded hover:bg-red-500"
         >
-          Find Design Colleges
+          Find Technology Colleges
         </Link>
       </section>
     </div>

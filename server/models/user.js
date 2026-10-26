@@ -9,7 +9,10 @@ export async function getUserByEmail(email) {
 export async function getUserById(id) {
   const pool = getPool();
   const [rows] = await pool.query(
-    "SELECT id, name, email, provider, google_id, created_at, updated_at FROM users WHERE id = ?",
+    `SELECT id, name, email, provider, google_id, role, 
+            education_level, class_or_year, stream_status, selected_stream,
+            created_at, updated_at 
+     FROM users WHERE id = ?`,
     [id]
   );
   return rows[0];

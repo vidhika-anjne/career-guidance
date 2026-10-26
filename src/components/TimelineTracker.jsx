@@ -18,6 +18,25 @@ const TimelineTracker = () => {
     description: "",
     priority: "medium"
   });
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
+  const isValidTitle = (t) => /[A-Za-z]/.test(String(t || "").trim());
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/events`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted) return;
+        const items = Array.isArray(data?.items) ? data.items : [];
+        setCustomEvents(items.map(it => ({ ...it, category: it.category || "personal", stream: "all", isCustom: true })));
+      } catch (_) { }
+    })();
+    return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Combine all events
   const allEvents = [
@@ -57,27 +76,54 @@ const TimelineTracker = () => {
       return dateA - dateB;
     });
 
-  const addCustomEvent = () => {
-    const event = {
-      ...newEvent,
-      id: `custom-${Date.now()}`,
-      category: "personal"
-    };
-    setCustomEvents([...customEvents, event]);
-    setNewEvent({
-      title: "",
-      date: new Date(),
-      type: "personal",
-      description: "",
-      priority: "medium"
-    });
-    setShowAddEvent(false);
+  const addCustomEvent = async () => {
+    const title = String(newEvent.title || "").trim();
+    if (!isValidTitle(title)) {
+      alert("Title must contain letters and cannot be only numbers");
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title,
+          date: newEvent.date,
+          type: "personal",
+          description: newEvent.description,
+          priority: newEvent.priority,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to add event");
+      const item = { ...data.item, stream: "all", isCustom: true };
+      setCustomEvents((prev) => [...prev, item]);
+      setNewEvent({ title: "", date: new Date(), type: "personal", description: "", priority: "medium" });
+      setShowAddEvent(false);
+    } catch (e) {
+      alert(e.message || "Failed to add event");
+    }
+  };
+
+  const deleteEvent = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/events/${id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) {
+        let msg = "Failed to delete event";
+        try { const d = await res.json(); if (d?.message) msg = d.message; } catch (_) { }
+        throw new Error(msg);
+      }
+      setCustomEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (e) {
+      alert(e.message || "Failed to delete event");
+    }
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
       high: "#ef4444",
-      medium: "#f59e0b", 
+      medium: "#f59e0b",
       low: "#10b981"
     };
     return colors[priority] || "#6b7280";
@@ -95,7 +141,7 @@ const TimelineTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 cursor-default">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -121,11 +167,10 @@ const TimelineTracker = () => {
                 <button
                   key={viewType}
                   onClick={() => setView(viewType)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                    view === viewType
-                      ? "bg-white text-blue-600 shadow-md"
-                      : "text-gray-600 hover:text-gray-800"
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${view === viewType
+                    ? "bg-white text-blue-600 shadow-md"
+                    : "text-gray-600 hover:text-gray-800"
+                    }`}
                 >
                   {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
                 </button>
@@ -178,10 +223,19 @@ const TimelineTracker = () => {
                 const eventDate = typeof event.date === 'string' ? parseISO(event.date) : event.date;
                 const daysLeft = Math.ceil((eventDate - new Date()) / (1000 * 60 * 60 * 24));
                 return (
-                  <div key={event.id} className="bg-white rounded-lg p-4 shadow-md">
+                  <div key={`up-${event.type}-${event.id}`} className="bg-white rounded-lg p-4 shadow-md">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{getTypeIcon(event.type)}</span>
                       <h4 className="font-bold text-gray-800 text-sm">{event.title}</h4>
+                      {event.isCustom && (
+                        <button
+                          onClick={() => window.confirm('Delete this event?') && deleteEvent(event.id)}
+                          className="ml-auto text-red-600 hover:text-red-800 text-xs"
+                          title="Delete event"
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{event.description}</p>
                     <div className="flex justify-between items-center">
@@ -222,7 +276,7 @@ const TimelineTracker = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300"
                       >
-                        <div 
+                        <div
                           className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
                           style={{ backgroundColor: getPriorityColor(event.priority) }}
                         >
@@ -268,11 +322,11 @@ const TimelineTracker = () => {
               <h3 className="text-2xl font-bold text-gray-800 mb-6">All Events</h3>
               <div className="space-y-6">
                 {["exam", "registration", "scholarship"].map((category) => {
-                  const categoryEvents = filteredEvents.filter(event => 
+                  const categoryEvents = filteredEvents.filter(event =>
                     (category === "scholarship" && event.category === "scholarship") ||
                     (category !== "scholarship" && event.type === category)
                   );
-                  
+
                   if (categoryEvents.length === 0) return null;
 
                   return (
@@ -285,7 +339,7 @@ const TimelineTracker = () => {
                           const eventDate = typeof event.date === 'string' ? parseISO(event.date) : event.date;
                           return (
                             <motion.div
-                              key={event.id}
+                              key={`ls-${event.type}-${event.id}`}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300"
@@ -293,13 +347,22 @@ const TimelineTracker = () => {
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-lg">{getTypeIcon(event.type)}</span>
                                 <h5 className="font-bold text-gray-800 text-sm">{event.title}</h5>
+                                {event.isCustom && (
+                                  <button
+                                    onClick={() => window.confirm('Delete this event?') && deleteEvent(event.id)}
+                                    className="ml-auto text-red-600 hover:text-red-800 text-xs"
+                                    title="Delete event"
+                                  >
+                                    🗑️
+                                  </button>
+                                )}
                               </div>
                               <p className="text-xs text-gray-600 mb-2">{event.description}</p>
                               <div className="flex justify-between items-center">
                                 <span className="text-xs font-medium text-gray-500">
                                   {format(eventDate, "MMM dd, yyyy")}
                                 </span>
-                                <span 
+                                <span
                                   className="px-2 py-1 rounded-full text-xs font-medium text-white"
                                   style={{ backgroundColor: getPriorityColor(event.priority) }}
                                 >
@@ -353,10 +416,19 @@ const TimelineTracker = () => {
                         return format(eventDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                       })
                       .map((event) => (
-                        <div key={event.id} className="p-3 border border-gray-200 rounded-lg">
+                        <div key={`cal-${event.type}-${event.id}`} className="p-3 border border-gray-200 rounded-lg">
                           <div className="flex items-center gap-2 mb-1">
                             <span>{getTypeIcon(event.type)}</span>
                             <h5 className="font-bold text-gray-800 text-sm">{event.title}</h5>
+                            {event.isCustom && (
+                              <button
+                                onClick={() => window.confirm('Delete this event?') && deleteEvent(event.id)}
+                                className="ml-auto text-red-600 hover:text-red-800 text-xs"
+                                title="Delete event"
+                              >
+                                🗑️
+                              </button>
+                            )}
                           </div>
                           <p className="text-xs text-gray-600">{event.description}</p>
                         </div>
@@ -365,8 +437,8 @@ const TimelineTracker = () => {
                       const eventDate = typeof event.date === 'string' ? parseISO(event.date) : event.date;
                       return format(eventDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                     }).length === 0 && (
-                      <p className="text-gray-500 text-sm">No events on this date</p>
-                    )}
+                        <p className="text-gray-500 text-sm">No events on this date</p>
+                      )}
                   </div>
                 </div>
               </div>
@@ -396,7 +468,7 @@ const TimelineTracker = () => {
                     <input
                       type="text"
                       value={newEvent.title}
-                      onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       placeholder="Event title"
                     />
@@ -405,7 +477,7 @@ const TimelineTracker = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                     <DatePicker
                       selected={newEvent.date}
-                      onChange={(date) => setNewEvent({...newEvent, date})}
+                      onChange={(date) => setNewEvent({ ...newEvent, date })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -413,7 +485,7 @@ const TimelineTracker = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea
                       value={newEvent.description}
-                      onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       rows="3"
                       placeholder="Event description"
@@ -423,7 +495,7 @@ const TimelineTracker = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                     <select
                       value={newEvent.priority}
-                      onChange={(e) => setNewEvent({...newEvent, priority: e.target.value})}
+                      onChange={(e) => setNewEvent({ ...newEvent, priority: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="low">Low</option>
@@ -441,7 +513,7 @@ const TimelineTracker = () => {
                   </button>
                   <button
                     onClick={addCustomEvent}
-                    disabled={!newEvent.title}
+                    disabled={!isValidTitle(newEvent.title)}
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-medium disabled:opacity-50"
                   >
                     Add Event

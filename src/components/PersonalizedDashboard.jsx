@@ -29,7 +29,32 @@ const PersonalizedDashboard = () => {
   });
 
   const [user, setUser] = useState(null);
+  const [showStreamChangeModal, setShowStreamChangeModal] = useState(false);
+  const [changingStream, setChangingStream] = useState(false);
   const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
+  // Handle stream change - reset stream and force common test
+  const handleStreamChange = async () => {
+    try {
+      setChangingStream(true);
+      const res = await fetch(`${API_BASE}/api/career-test/change-stream`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!res.ok) throw new Error('Failed to reset stream');
+
+      // Refresh user data
+      await fetchUserProfile();
+      setShowStreamChangeModal(false);
+      alert('✅ Stream reset! You can now take the common aptitude test to discover your best fit.');
+    } catch (error) {
+      alert('Failed to reset stream. Please try again.');
+    } finally {
+      setChangingStream(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -41,7 +66,7 @@ const PersonalizedDashboard = () => {
         if (c.recommendations) setRecommendations(c.recommendations);
         setLoading(false);
       }
-    } catch (_) {}
+    } catch (_) { }
     fetchUserProfile();
   }, []);
 
@@ -55,7 +80,7 @@ const PersonalizedDashboard = () => {
           currentUser = du.user;
           setUser(du.user);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       const pr = await fetch(`${API_BASE}/api/user/profile`, { credentials: "include" });
       if (pr.ok) {
@@ -71,10 +96,10 @@ const PersonalizedDashboard = () => {
         };
         setUserProfile({ profile: p });
         setProfileData(pd);
-        const rec = generateRecommendations(pd);
+        const rec = await generateRecommendations(pd);
         try {
           localStorage.setItem("cv_dashboard", JSON.stringify({ user: currentUser, profileData: pd, recommendations: rec }));
-        } catch (_) {}
+        } catch (_) { }
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -100,17 +125,17 @@ const PersonalizedDashboard = () => {
         body: JSON.stringify(payload),
       });
       setUserProfile({ ...userProfile, profile: payload });
-      const rec = generateRecommendations(profileData);
+      const rec = await generateRecommendations(profileData);
       try {
         localStorage.setItem("cv_dashboard", JSON.stringify({ user, profileData, recommendations: rec }));
-      } catch (_) {}
+      } catch (_) { }
       setEditMode(false);
     } catch (error) {
       console.error("Error updating profile:", error);
     }
   };
 
-  const generateRecommendations = (profile) => {
+  const generateRecommendations = async (profile) => {
     // AI-like recommendation algorithm based on profile
     const streamScores = {
       science: 0,
@@ -156,14 +181,17 @@ const PersonalizedDashboard = () => {
 
     // Generate specific recommendations
     const topStreams = Object.entries(normalizedScores)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 3);
+
+    // Await colleges from API
+    const colleges = await generateCollegeRecommendations(profile.location, topStreams);
 
     const rec = {
       scores: normalizedScores,
       topStreams,
       courses: generateCourseRecommendations(topStreams),
-      colleges: generateCollegeRecommendations(profile.location, topStreams),
+      colleges,
       resources: generateResourceRecommendations(topStreams)
     };
     setRecommendations(rec);
@@ -179,24 +207,28 @@ const PersonalizedDashboard = () => {
       design: ["B.Des", "BFA", "Diploma in Graphic Design"]
     };
 
-    return topStreams.flatMap(([stream]) => 
+    return topStreams.flatMap(([stream]) =>
       courseMap[stream]?.slice(0, 2) || []
     ).slice(0, 6);
   };
 
-  const generateCollegeRecommendations = (location, topStreams) => {
-    // Mock college recommendations based on location and streams
-    const colleges = [
-      { name: "Delhi University", stream: "arts", location: "Delhi" },
-      { name: "IIT Delhi", stream: "technology", location: "Delhi" },
-      { name: "AIIMS Delhi", stream: "science", location: "Delhi" },
-      { name: "SRCC", stream: "commerce", location: "Delhi" },
-      { name: "NID Delhi", stream: "design", location: "Delhi" }
-    ];
+  const generateCollegeRecommendations = async (location, topStreams) => {
+    try {
+      // Fetch real colleges from database based on streams
+      const streamTypes = topStreams.map(([stream]) => stream).join(',');
+      const url = `${API_BASE}/api/colleges?type=${streamTypes}&limit=4`;
 
-    return colleges
-      .filter(college => topStreams.some(([stream]) => stream === college.stream))
-      .slice(0, 4);
+      const res = await fetch(url, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        return data.colleges || [];
+      }
+    } catch (error) {
+      console.error("Error fetching colleges:", error);
+    }
+
+    // Fallback to empty array if API fails
+    return [];
   };
 
   const generateResourceRecommendations = (topStreams) => {
@@ -208,7 +240,7 @@ const PersonalizedDashboard = () => {
       design: ["Design Thinking Course", "Adobe Creative Suite Tutorial", "UI/UX Design Basics"]
     };
 
-    return topStreams.flatMap(([stream]) => 
+    return topStreams.flatMap(([stream]) =>
       resourceMap[stream]?.slice(0, 2) || []
     ).slice(0, 6);
   };
@@ -260,12 +292,11 @@ const PersonalizedDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
         >
           {[
             { title: "Take Aptitude Test", icon: "🧠", path: PathConstants.APTITUDE, color: "from-blue-500 to-purple-600" },
             { title: "Explore Career Paths", icon: "🛤️", path: PathConstants.CAREERPATHS, color: "from-green-500 to-emerald-600" },
-            { title: "Find Colleges", icon: "🏫", path: PathConstants.COLLEGEMAP, color: "from-orange-500 to-red-600" },
             { title: "Timeline Tracker", icon: "📅", path: PathConstants.TIMELINE, color: "from-purple-500 to-pink-600" }
           ].map((action, index) => (
             <Link
@@ -286,6 +317,85 @@ const PersonalizedDashboard = () => {
             </Link>
           ))}
         </motion.div>
+
+        {/* Stream Information Card - Shows if user has selected stream */}
+        {user?.selected_stream && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-2xl shadow-lg p-6 mb-8 border-l-4 border-blue-500"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                  🎯 Your Selected Stream
+                </h3>
+                <div className="space-y-1">
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Stream:</span> {user.selected_stream}
+                  </p>
+                  {user.education_level && (
+                    <p className="text-gray-600 text-sm">
+                      {user.education_level} {user.class_or_year && `- ${user.class_or_year}`}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-2">
+                    💡 You'll receive stream-specific aptitude questions tailored to {user.selected_stream}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowStreamChangeModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium whitespace-nowrap"
+              >
+                🔄 Change Stream
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Stream Change Confirmation Modal */}
+        {showStreamChangeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full"
+            >
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                Change Your Stream?
+              </h3>
+              <p className="text-gray-700 mb-6">
+                This will reset your current stream selection (<strong>{user?.selected_stream}</strong>)
+                and allow you to take the common aptitude test again to discover the best stream for you.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ On your next test session, you'll receive general aptitude questions
+                  that will help determine your ideal stream based on your skills and interests.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleStreamChange}
+                  disabled={changingStream}
+                  className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50"
+                >
+                  {changingStream ? 'Resetting...' : 'Yes, Reset Stream'}
+                </button>
+                <button
+                  onClick={() => setShowStreamChangeModal(false)}
+                  disabled={changingStream}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Section */}
@@ -312,7 +422,7 @@ const PersonalizedDashboard = () => {
                   <input
                     type="number"
                     value={profileData.age}
-                    onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, age: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -320,7 +430,7 @@ const PersonalizedDashboard = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
                   <select
                     value={profileData.class}
-                    onChange={(e) => setProfileData({...profileData, class: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, class: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   >
                     <option value="">Select Class</option>
@@ -335,7 +445,7 @@ const PersonalizedDashboard = () => {
                   <input
                     type="text"
                     value={profileData.location}
-                    onChange={(e) => setProfileData({...profileData, location: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     placeholder="City, State"
                   />
@@ -369,8 +479,8 @@ const PersonalizedDashboard = () => {
               <div className="mt-6">
                 <h4 className="text-lg font-bold text-gray-800 mb-4">Academic Performance</h4>
                 <div className="h-48">
-                  <Line 
-                    data={academicChart} 
+                  <Line
+                    data={academicChart}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
@@ -380,7 +490,7 @@ const PersonalizedDashboard = () => {
                           max: 100
                         }
                       }
-                    }} 
+                    }}
                   />
                 </div>
               </div>
@@ -404,7 +514,7 @@ const PersonalizedDashboard = () => {
                       const stream = streamInfo[streamKey];
                       return (
                         <div key={streamKey} className="text-center p-4 border border-gray-200 rounded-xl">
-                          <div 
+                          <div
                             className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-white font-bold text-lg"
                             style={{ backgroundColor: stream.color }}
                           >

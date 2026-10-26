@@ -13,7 +13,7 @@ const Marketing = () => {
     >
       {/* Header Section */}
       <header className="sticky top-0 z-10 py-5 text-white bg-black bg-opacity-70">
-        <h1 className="text-3xl text-center">Explore Accounting Courses</h1>
+        <h1 className="text-3xl text-center">Explore Marketing Courses</h1>
         <nav>
           <ul className="flex justify-center mt-4 space-x-6">
             <li>
@@ -72,7 +72,7 @@ const Marketing = () => {
               consumer behavior, and brand management.
             </p>
             <details className="text-gray-700">
-              <summary className="cursor-pointer">View Entrance Exams</summary>
+              <summary>View Entrance Exams</summary>
               <p>
                 <strong>IPMAT:</strong> Integrated Program in Management
                 Aptitude Test - Tentative Date: June
@@ -93,7 +93,7 @@ const Marketing = () => {
               strategies, digital marketing, and consumer research.
             </p>
             <details className="text-gray-700">
-              <summary className="cursor-pointer">View Entrance Exams</summary>
+              <summary>View Entrance Exams</summary>
               <p>
                 <strong>CAT:</strong> Common Admission Test - Tentative Date:
                 November
@@ -114,7 +114,7 @@ const Marketing = () => {
               media, and content strategy.
             </p>
             <details className="text-gray-700">
-              <summary className="cursor-pointer">View Entrance Exams</summary>
+              <summary>View Entrance Exams</summary>
               <p>
                 <strong>Direct Admission:</strong> Based on eligibility criteria
                 of the institution
@@ -129,7 +129,7 @@ const Marketing = () => {
               strategy, and marketing analytics.
             </p>
             <details className="text-gray-700">
-              <summary className="cursor-pointer">View Entrance Exams</summary>
+              <summary>View Entrance Exams</summary>
               <p>
                 <strong>UGC NET:</strong> University Grants Commission National
                 Eligibility Test - Tentative Date: December
@@ -144,12 +144,12 @@ const Marketing = () => {
         <h2 className="mb-6 text-2xl text-red-600">
           Ready to Start Your Marketing Journey?
         </h2>
-        <button
-          onClick={() => (window.location.href = "college-finder.html")}
+        <Link
+          to={`${PathConstants.SEARCH}?path=commerce`}
           className="px-6 py-3 text-white transition bg-red-600 rounded-md hover:bg-red-700"
         >
           Find Marketing Colleges
-        </button>
+        </Link>
       </section>
     </div>
   );

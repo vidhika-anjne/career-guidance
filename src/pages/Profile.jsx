@@ -35,7 +35,7 @@ function Profile() {
           const data = await pr.json();
           setProfile(data.profile || {});
         }
-      } catch (_) {}
+      } catch (_) { }
       setLoading(false);
     };
     load();
@@ -44,7 +44,7 @@ function Profile() {
 
   const handleLogout = () => {
     fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => navigate(PathConstants.ABOUT));
   };
 

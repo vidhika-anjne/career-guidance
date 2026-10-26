@@ -112,7 +112,7 @@ const Medicine = () => {
               </h3>
               <p className="mb-4 text-gray-700">{course.description}</p>
               <details>
-                <summary className="font-semibold text-gray-600 cursor-pointer">
+                <summary className="font-semibold text-gray-600">
                   View Entrance Exams
                 </summary>
                 {course.exams.map((exam, idx) => (
@@ -126,17 +126,78 @@ const Medicine = () => {
         </div>
       </section>
 
+      {/* Career Roles & Skills */}
+      <section className="p-8 bg-white/80">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">What You Can Do in Medicine</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {["Doctor (MBBS)", "Surgeon (MS)", "Dentist (BDS)", "Ayurvedic Practitioner (BAMS)", "Medical Researcher", "Public Health Specialist"].map((role) => (
+              <div key={role} className="p-4 rounded-lg shadow bg-white">
+                <p className="font-semibold text-red-400">{role}</p>
+                <p className="text-sm text-gray-600 mt-1">Brief: Practice, diagnose, treat, or conduct research depending on specialization.</p>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-800 mt-8 mb-3">Key Skills</h3>
+          <div className="flex flex-wrap gap-2">
+            {["Clinical Knowledge", "Patient Care", "Ethics", "Communication", "Research Methods", "Decision Making"].map((s) => (
+              <span key={s} className="px-3 py-1 text-sm rounded-full bg-red-50 text-red-600 border border-red-200">{s}</span>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Entrance Exams Overview</h3>
+              <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                <li><strong>NEET (UG):</strong> MBBS, BDS, BAMS entries</li>
+                <li><strong>NEET PG:</strong> MD/MS specialization</li>
+                <li><strong>AIIMS/INI-CET:</strong> Select Institutes of National Importance</li>
+                <li><strong>NEET SS:</strong> Super-specialty (DM/MCh)</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Top Colleges (Indicative)</h3>
+              <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                <li>AIIMS (Delhi and other campuses)</li>
+                <li>CMC Vellore</li>
+                <li>JIPMER Puducherry</li>
+                <li>Maulana Azad Medical College (MAMC), Delhi</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div className="p-4 rounded-lg bg-gray-50 border">
+              <h4 className="font-semibold text-gray-800 mb-1">Salary & Growth</h4>
+              <p className="text-sm text-gray-700">Varies widely by specialization and institution. Example early career range: ₹6–15 LPA; experienced specialists can earn significantly higher.</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gray-50 border">
+              <h4 className="font-semibold text-gray-800 mb-1">Suggested Roadmap</h4>
+              <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
+                <li>Build Biology, Chemistry fundamentals</li>
+                <li>Prepare for NEET (UG)</li>
+                <li>Complete MBBS/BAMS/BDS</li>
+                <li>Internship; select specialization</li>
+                <li>Clear PG exams (NEET PG/INI-CET)</li>
+                <li>Residency; super-specialize if needed</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Call-to-Action Section */}
       <section className="py-8 text-center text-white bg-black bg-opacity-80">
         <h2 className="mb-6 text-3xl font-bold text-red-400">
           Interested in a Medical Career?
         </h2>
-        <button
-          onClick={() => (window.location.href = "college-finder.html")}
+        <Link
+          to={`${PathConstants.SEARCH}?types=medical`}
           className="px-8 py-4 text-lg font-medium transition bg-red-400 rounded-lg hover:bg-red-500"
         >
           Find Medical Colleges
-        </button>
+        </Link>
       </section>
     </div>
   );
